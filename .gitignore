@@ -4,3 +4,4 @@ __pycache__/
 *.pkl
 videos/*
 all_keypoints.npy
+.DS_Store

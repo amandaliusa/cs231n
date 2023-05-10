@@ -4,3 +4,4 @@ scikit-stats
 gitpython
 opencv-python
 torchvision 
+pytorchvideo

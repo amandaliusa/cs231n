@@ -9,4 +9,4 @@ pytorchvideo
 scipy
 scikit-image
 tqdm
-ffpmeg-python
+ffmpeg-python

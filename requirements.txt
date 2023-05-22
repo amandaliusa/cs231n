@@ -10,3 +10,5 @@ scipy
 scikit-image
 tqdm
 ffmpeg-python
+ffprobe
+ffmpeg

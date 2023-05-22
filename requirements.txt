@@ -3,5 +3,10 @@ matplotlib
 scikit-stats
 gitpython
 opencv-python
+torch
 torchvision 
 pytorchvideo
+scipy
+scikit-image
+tqdm
+ffpmeg-python

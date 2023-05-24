@@ -11,6 +11,10 @@ from torchvision import transforms
 from src import util
 from src.model import bodypose_model
 
+# if running from src directory, use the following imports instead 
+# import util
+# from model import bodypose_model
+
 class Body(object):
     def __init__(self, model_path):
         self.model = bodypose_model()
@@ -203,8 +207,11 @@ class Body(object):
                 deleteIdx.append(i)
         subset = np.delete(subset, deleteIdx, axis=0)
 
-        # subset: n*20 array, 0-17 is the index in candidate, 18 is the total score, 19 is the total parts
-        # candidate: x, y, score, id
+        # subset: n*20 array, each row in subset represents a person (except the last row)
+        # columns 0-17 contain the index of the row in candidate that has the coordinates of that body part/keypoint, 18 is the total score, 19 is the total parts
+        # candidate: each row has x, y, score, id
+        # suppose subset[1, 5] = 12; then in row 12 of candidate, (x, y) represent coordinates on image where 
+        # body part/keypoint 5 is located for person 1 (0-indexed)
         return candidate, subset
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ __pycache__/
 .ipynb_checkpoints/
 *.mp4
 !1ovgasC1.mp4
+!kunkun.mp4
 *.pkl
 videos/*
 all_keypoints.npy

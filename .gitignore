@@ -3,6 +3,10 @@ __pycache__/
 *.mp4
 !1ovgasC1.mp4
 !kunkun.mp4
+!20230422_120659.mp4 
+!AnEq8Uph.mp4 
+!OuYG4U64.mp4 
+*.png
 *.pkl
 videos/*
 all_keypoints.npy

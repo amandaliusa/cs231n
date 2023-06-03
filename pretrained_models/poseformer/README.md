@@ -5,3 +5,5 @@ Lines to comment out:
 edge = (image_2d.shape[1] - image_2d.shape[0]) // 2
 image_2d = image_2d[:, edge:image_2d.shape[1] - edge]
 ```
+
+In the analysis directory, vis_poseformer.py is also adapted from https://github.com/zczcwh/poseformer_demo.

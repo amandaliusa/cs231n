@@ -882,15 +882,164 @@ def run_openpose(path, slug):
     os.system(CMD)
     return CMD
 
-def process_raw_video(video_path, processed_npy_path="videos/np/"):
-    # Run OpenPose
-    # Convert frame jsons to npy
-    # Save numpy to "videos/np/" with some subjectid based on the path
-    # process_subject(subjectid)
-    pass
-
 def process_subject(subjectid, processed_npy_path="videos/np/", framerate = None):
-    res = np.load("{}{}.npy".format(processed_npy_path, subjectid))
+    #res = np.load("{}{}.npy".format(processed_npy_path, subjectid))
+    res = np.load("{}/keypoints.npz".format(processed_npy_path))
+    
+    if subjectid == "pmYdj2Zc":
+        res = res[:-10,:]
+    
+    # make it more intuitive by inverting Y
+    res[:,1::3] = 50 + res[:,1::3].max() - res[:,1::3]
+    
+    md = np.median((res[:,MHIP*3] - (res[:,LKNE*3] + res[:,RKNE*3])/2 ))
+    
+    orientation = "R" if md < 0 else "L"
+    
+    print(orientation)
+    if orientation == "L":
+        res[:,0::3] = 1 + res[:,0::3].max()-res[:,0::3]
+        # TODO: swap left and right
+        
+        for cols in toswap:
+            swap_columns(res, cols[0], cols[1])
+    
+    first = 0
+    last = res.shape[0]-0
+    magnitude = 1
+    
+    if subjectid == "k4Zz5q1I":
+        first = 75
+        last = 240
+        magnitude = 0.1
+    if subjectid == "hozGKSGr":
+        first = 60
+        last = 250
+        magnitude = 0.1
+    if subjectid == "8iHK3CGi":
+        first = 550
+        last = 1000
+        magnitude = 0.1
+    if subjectid == "9qluCnOn":
+        first = 0
+        last = 400
+        magnitude = 0.2
+    if subjectid == "zyW3PPtt":
+        res[res[:,NOSE*3+1] < -1,NOSE*3+1] = np.NaN
+
+    if subjectid in tofix:
+        first = tofix[subjectid][0]
+        last = tofix[subjectid][1]
+        
+    if not framerate:
+        framerate = videometa[subjectid]["framerate"]
+
+    res = res[first:last,:]
+
+    res[res < 0.5] = np.NaN 
+    res = np.apply_along_axis(fill_nan,arr=res,axis=0)
+    
+    #plt.plot(res[:,RANK])
+
+    res = center_ts(res)
+    ups, downs = get_segments(res, magnitude=magnitude, framerate = framerate)
+    
+    if subjectid in realign:
+        print(downs)
+        for k,v in realign[subjectid].items():
+            downs[k] = v
+        print(downs)
+    
+    # TODO: assert alternating
+    allbreaks = sorted(ups.tolist() + downs.tolist())
+    if allbreaks[1] == downs[0]:
+        allbreaks = allbreaks[1:]
+    if allbreaks[0] != downs[0]:
+        return None
+    if len(allbreaks)%2 == 1:
+        allbreaks=allbreaks[:(len(allbreaks)-1)]
+    allbreaks = np.array(allbreaks)
+    
+    results = {
+        "subjectid": subjectid,
+        "orientation": orientation,
+        "framerate": framerate,
+    }
+    
+    # estimate height
+    lengths = res[ups[1]:ups[-2],3*NOSE:(3*NOSE+2)] - res[ups[1]:ups[-2],3*RANK:(3*RANK+2)]
+    lengths = np.sqrt(np.sum(lengths**2, axis=1))
+    height = np.quantile(lengths, 0.95)
+    print(height)
+    
+    for i in range(3*25):
+        res[:,i] = smooth_ts(res[:,i], framerate)
+        
+    # Normalize to r foot
+    delta = res[:,3*RANK:(3*RANK+2)].copy()
+    for i in range(res.shape[1]//3):
+        res[:,3*i:(3*i+2)] = (res[:,3*i:(3*i+2)] - delta)/height
+        
+    results.update(get_time_results(res, downs, framerate = framerate))
+    results.update(get_time_results(res, allbreaks, framerate = framerate, alternate=1))
+    results.update(get_time_results(res, allbreaks, framerate = framerate, alternate=-1))
+
+    results.update(get_angles_results(res, downs, framerate = framerate, breaks_alt = ups))
+    results.update(get_angles_results(res, allbreaks, framerate = framerate, alternate=1))
+    results.update(get_angles_results(res, allbreaks, framerate = framerate, alternate=-1))
+
+    results.update(get_acceleration_results(res, downs, framerate = framerate))
+    results.update(get_acceleration_results(res, allbreaks, framerate = framerate, alternate=1))
+    results.update(get_acceleration_results(res, allbreaks, framerate = framerate, alternate=-1))
+
+#    kp3d = get_keypoints3d("npz/{}_ts_results.npz".format(videometa[subjectid]["videoid"]), framerate=framerate)
+    kp3d = None
+    results.update(get_static(res, downs, ups))
+    
+    if kp3d is not None:
+        try:
+            results.update(get_angles_results(kp3d, downs, framerate = framerate))
+            results.update(get_angles_results(kp3d, allbreaks, framerate = framerate, alternate=1))
+            results.update(get_angles_results(kp3d, allbreaks, framerate = framerate, alternate=-1))
+        except:
+            print("E")
+
+        try:
+            results.update(get_acceleration_results(kp3d, downs, framerate = framerate))
+            results.update(get_acceleration_results(kp3d, allbreaks, framerate = framerate, alternate=1))
+            results.update(get_acceleration_results(kp3d, allbreaks, framerate = framerate, alternate=-1))
+        except:
+            print("E")
+
+        try:
+            results.update(get_static(kp3d, downs, ups))
+        except:
+            print("E")
+
+    return results
+
+def process_subject_poseformer(subjectid, processed_npy_path, framerate = None):
+    # total of 17 keypoints
+    MHIP = 0 # middle of hip
+    RHIP = 1 # right hip
+    RKNE = 2 # right knee
+    RANK = 3 # right ankle
+    LHIP = 4 # left hip
+    LKNE = 5 # left knee
+    LANK = 6 # left ankle
+    MTOR = 7 # middle of torso
+    NECK = 8 # neck
+    NOSE = 9 # nose
+    HEAD = 10 # forehead
+    LSHO = 11 # left shoulder
+    LELB = 12 # left elbow
+    LWRI = 13 # left wrist
+    RSHO = 14 # right shoulder
+    RELB = 15 # right elbow
+    RWRI = 16 # right wrist
+
+    #res = np.load("{}{}.npy".format(processed_npy_path, subjectid))
+    res = np.load("{}/keypoints.npz".format(processed_npy_path))
     
     if subjectid == "pmYdj2Zc":
         res = res[:-10,:]

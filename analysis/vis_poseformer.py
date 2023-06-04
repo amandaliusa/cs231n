@@ -46,6 +46,8 @@ def show2Dpose_singleConnection(kps, img, i):
     return img
 
 def show2Dpose(kps, img, i):
+    # kps has shape (17, 2) = (number of keypoints, number of dimensions)
+
     # total of 17 keypoints
     # 0 middle of hip
     # 1 right hip
@@ -89,6 +91,7 @@ def show2Dpose(kps, img, i):
 
 
 def show3Dpose(vals, ax):
+    # vals has shape (17, 3) = (number of keypoints, number of dimensions)
     ax.view_init(elev=15., azim=70)
 
     lcolor=(0,0,1)
@@ -99,8 +102,8 @@ def show3Dpose(vals, ax):
 
     LR = np.array([0, 1, 0, 1, 0, 1, 0, 0, 0,   1,  0,  0,  1,  1, 0, 0], dtype=bool)
 
-    for i in np.arange( len(I) ):
-        x, y, z = [np.array( [vals[I[i], j], vals[J[i], j]] ) for j in range(3)]
+    for i in np.arange(len(I)):
+        x, y, z = [np.array([vals[I[i], j], vals[J[i], j]]) for j in range(3)]
         ax.plot(x, y, z, lw=2, color = lcolor if LR[i] else rcolor)
 
     RADIUS = 0.72
@@ -198,13 +201,19 @@ def get_pose3D(video_path, output_dir):
         # for i in range(16): 
         #     print("writing connections " + str(i))
 
-        #     image = show2Dpose(input_2D_no, copy.deepcopy(img), i)
+        #     image = show2Dpose_singleConnection(input_2D_no, copy.deepcopy(img), i)
 
         #     output_dir_2D = output_dir +'pose2D/'
         #     os.makedirs(output_dir_2D, exist_ok=True)
         #     cv2.imwrite(output_dir_2D + 'keypoints_{}_2D.png'.format(i), image)
         
         # break
+
+        image = show2Dpose(input_2D_no, copy.deepcopy(img), i)
+
+        output_dir_2D = output_dir +'pose2D/'
+        os.makedirs(output_dir_2D, exist_ok=True)
+        cv2.imwrite(output_dir_2D + '_2D.png', image)
 
         ## 3D
         fig = plt.figure( figsize=(9.6, 5.4))

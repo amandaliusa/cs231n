@@ -15,7 +15,7 @@ import pickle
 import traceback
 from utils import *
 
-def get_metrics(output_path, show_plots):
+def get_metrics(output_path, show_plots, get_3d):
     num_joints = 17
 
     # Get a list of all subjects
@@ -29,17 +29,23 @@ def get_metrics(output_path, show_plots):
         print(subjectid)
         try:
             if (subjectid != "kunkun" and os.path.isdir("../pretrained_models/poseformer/{}".format(subjectid))):
-                processed_npz_path="../pretrained_models/poseformer/{}/input_2D/".format(subjectid)
-                res = np.load("{}/keypoints.npz".format(processed_npz_path))['reconstruction']
-                res = np.reshape(res, (res.shape[1], res.shape[2], res.shape[3]))
+                processed_npz_path_2d="{}/pretrained_models/poseformer/{}/input_2D/".format(homedir, subjectid)
+                res2d = np.load("{}/keypoints.npz".format(processed_npz_path_2d))['reconstruction']
+                res2d = np.reshape(res2d, (res2d.shape[1], res2d.shape[2], res2d.shape[3]))
                 
-                reshaped_res = np.ones((res.shape[0], num_joints * 3))
+                reshaped_res_2d = np.ones((res2d.shape[0], num_joints * 3))
                 mask_x = [i for i in range(0, num_joints*3, 3)]
                 mask_y = [i+1 for i in range(0, num_joints*3, 3)]
-                reshaped_res[:,mask_x] = res[:,:,0]
-                reshaped_res[:,mask_y] = res[:,:,1]
+                reshaped_res_2d[:,mask_x] = res2d[:,:,0]
+                reshaped_res_2d[:,mask_y] = res2d[:,:,1]
 
-                results = process_subject_poseformer(subjectid, reshaped_res, framerate=30, show_plots=show_plots)
+                res3d = None
+                if get_3d:
+                    processed_npy_path_3d="{}/pretrained_models/poseformer/{}/".format(homedir, subjectid)
+                    res3d = np.load("{}/3d_output.npy".format(processed_npy_path_3d))
+
+                results = process_subject_poseformer(subjectid, reshaped_res_2d, res3d, framerate=30, show_plots=show_plots)
+
                 if results != None:
                     all_res.append(results) 
         except Exception as e:
@@ -60,8 +66,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_path', type=str, default='todays_date', help='input output path')
     parser.add_argument('--show_plots', type=bool, default=False, help='input whether to generate')
+    parser.add_argument('--get_3d', type=bool, default=True, help='input whether to generate 3d metrics')
     args = parser.parse_args()
 
-    get_metrics(args.output_path, args.show_plots)
-
-
+    get_metrics(args.output_path, args.show_plots, args.get_3d)

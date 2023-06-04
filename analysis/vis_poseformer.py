@@ -97,11 +97,13 @@ def show3Dpose(vals, ax):
     lcolor=(0,0,1)
     rcolor=(1,0,0)
 
+    # these are the joint connections (I contains the first joint index, J contains the second joint index)
     I = np.array( [0, 0, 1, 4, 2, 5, 0, 7,  8,  8, 14, 15, 11, 12, 8,  9])
     J = np.array( [1, 4, 2, 5, 3, 6, 7, 8, 14, 11, 15, 16, 12, 13, 9, 10])
 
     LR = np.array([0, 1, 0, 1, 0, 1, 0, 0, 0,   1,  0,  0,  1,  1, 0, 0], dtype=bool)
 
+    # plot each connection
     for i in np.arange(len(I)):
         x, y, z = [np.array([vals[I[i], j], vals[J[i], j]]) for j in range(3)]
         ax.plot(x, y, z, lw=2, color = lcolor if LR[i] else rcolor)

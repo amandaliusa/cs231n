@@ -255,6 +255,18 @@ def get_keypoints3d(npz, framerate=30):
 
     return kp3d
 
+def get_keypoints3d_poseformer(kp3d, framerate=30):
+    # res3d_list = []
+    # for frame in range(len(res[0])):
+    #     res3d_list.append(res[0][f"{frame:06}"]["j3d_op25"])
+        
+    # kp3d = np.stack(res3d_list)
+    for i in range(17):
+        for j in range(3):
+            kp3d[:,i,j] = smooth_ts(kp3d[:,i,j], framerate=framerate)#,s=0.1)
+
+    return kp3d
+
 SAVE_FIGS = False
 MORE_PLOTS = True
 
@@ -1053,7 +1065,7 @@ def process_subject(subjectid, processed_npy_path="videos/np/", framerate = None
 
     return results
 
-def process_subject_poseformer(subjectid, res, framerate, show_plots=False):
+def process_subject_poseformer(subjectid, res, res3d=None, framerate=30, show_plots=False):
     
     if subjectid == "pmYdj2Zc":
         res = res[:-10,:]
@@ -1157,9 +1169,10 @@ def process_subject_poseformer(subjectid, res, framerate, show_plots=False):
     results.update(get_acceleration_results(res, downs, framerate = framerate, show_plots = show_plots))
     results.update(get_acceleration_results(res, allbreaks, framerate = framerate, alternate=1, show_plots = show_plots))
     results.update(get_acceleration_results(res, allbreaks, framerate = framerate, alternate=-1, show_plots = show_plots))
-
-#    kp3d = get_keypoints3d("npz/{}_ts_results.npz".format(videometa[subjectid]["videoid"]), framerate=framerate)
-    kp3d = None
+ 
+    kp3d = None 
+    if res3d is not None:
+        kp3d = get_keypoints3d_poseformer(res3d, framerate=framerate)
     results.update(get_static(res, downs, ups))
     
     if kp3d is not None:

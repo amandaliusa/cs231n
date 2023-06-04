@@ -5,19 +5,14 @@ These visualization utils are adapted from https://github.com/zczcwh/poseformer_
 import sys
 import argparse
 import cv2
-#from lib.preprocess import h36m_coco_format, revise_kpts
-#from lib.hrnet.gen_kpts import gen_video_kpts as hrnet_pose
 import os 
 import numpy as np
 import torch
 import glob
 from tqdm import tqdm
 import copy
-from IPython import embed
 
 sys.path.append(os.getcwd())
-#from model.poseformer import Model_poseformer
-#from common.camera import *
 
 import matplotlib
 import matplotlib.pyplot as plt 
@@ -28,7 +23,47 @@ plt.switch_backend('agg')
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
-def show2Dpose(kps, img):
+def show2Dpose_singleConnection(kps, img, i):
+    connections = [[0, 1], [1, 2], [2, 3], [0, 4], [4, 5],
+                   [5, 6], [0, 7], [7, 8], [8, 9], [9, 10],
+                   [8, 11], [11, 12], [12, 13], [8, 14], [14, 15], [15, 16]]
+
+    LR = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], dtype=bool)
+
+    lcolor = (255, 0, 0)
+    rcolor = (0, 0, 255)
+    thickness = 3
+
+    start = map(int, kps[connections[i][0]])
+    end = map(int, kps[connections[i][1]])
+    start = list(start)
+    end = list(end)
+
+    cv2.line(img, (start[0], start[1]), (end[0], end[1]), lcolor if LR[i] else rcolor, thickness)
+    cv2.circle(img, (start[0], start[1]), thickness=-1, color=(0, 255, 0), radius=3)
+    cv2.circle(img, (end[0], end[1]), thickness=-1, color=(0, 255, 0), radius=3)
+
+    return img
+
+def show2Dpose(kps, img, i):
+    # total of 17 keypoints
+    # 0 middle of hip
+    # 1 right hip
+    # 2 right knee
+    # 3 right ankle
+    # 4 left hip
+    # 5 left knee
+    # 6 left ankle
+    # 7 middle of torso
+    # 8 neck
+    # 9 nose
+    # 10 forehead
+    # 11 left shoulder
+    # 12 left elbow
+    # 13 left wrist
+    # 14 right shoulder
+    # 15 right elbow
+    # 16 right wrist
     connections = [[0, 1], [1, 2], [2, 3], [0, 4], [4, 5],
                    [5, 6], [0, 7], [7, 8], [8, 9], [9, 10],
                    [8, 11], [11, 12], [12, 13], [8, 14], [14, 15], [15, 16]]
@@ -158,11 +193,18 @@ def get_pose3D(video_path, output_dir):
         input_2D_no = input_2D_no[args.pad]
 
         ## 2D
-        image = show2Dpose(input_2D_no, copy.deepcopy(img))
 
-        output_dir_2D = output_dir +'pose2D/'
-        os.makedirs(output_dir_2D, exist_ok=True)
-        cv2.imwrite(output_dir_2D + str(('%04d'% i)) + '_2D.png', image)
+        # to visualize single connection
+        # for i in range(16): 
+        #     print("writing connections " + str(i))
+
+        #     image = show2Dpose(input_2D_no, copy.deepcopy(img), i)
+
+        #     output_dir_2D = output_dir +'pose2D/'
+        #     os.makedirs(output_dir_2D, exist_ok=True)
+        #     cv2.imwrite(output_dir_2D + 'keypoints_{}_2D.png'.format(i), image)
+        
+        # break
 
         ## 3D
         fig = plt.figure( figsize=(9.6, 5.4))
@@ -178,7 +220,6 @@ def get_pose3D(video_path, output_dir):
     print('Generating 3D pose successful!')
 
     ## all
-    image_dir = 'results/' 
     image_2d_dir = sorted(glob.glob(os.path.join(output_dir_2D, '*.png')))
     image_3d_dir = sorted(glob.glob(os.path.join(output_dir_3D, '*.png')))
 
@@ -209,22 +250,4 @@ def get_pose3D(video_path, output_dir):
         output_dir_pose = output_dir +'pose/'
         os.makedirs(output_dir_pose, exist_ok=True)
         plt.savefig(output_dir_pose + str(('%04d'% i)) + '_pose.png', dpi=200, bbox_inches = 'tight')
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--video', type=str, default='sample_video.mp4', help='input video')
-    parser.add_argument('--gpu', type=str, default='0', help='input video')
-    args = parser.parse_args()
-
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
-
-    video_path = './demo/video/' + args.video
-    video_name = ".".join(video_path.split('/')[-1].split('.')[:-1])
-    print(video_name)
-    output_dir = './demo/output/' + video_name + '/'
-
-    get_pose3D(video_path, output_dir)
-    img2video(video_path, output_dir)
-    print('Generating demo successful!')
-
 

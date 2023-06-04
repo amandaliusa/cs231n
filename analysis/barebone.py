@@ -1,18 +1,8 @@
-# Setup
-# import pandas as pd
-# import numpy as np
-# import git
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-# from sklearn.model_selection import train_test_split
 
-# import matplotlib.pyplot as plt
-# %matplotlib inline
-
-# repo = git.Repo("./", search_parent_directories=True)
-# homedir = repo.working_dir
 dtype=torch.float32
 
 USE_GPU = True

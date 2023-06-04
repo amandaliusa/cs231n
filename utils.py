@@ -252,7 +252,7 @@ def mean_perc(ts):
     ts = ts[ts < np.percentile(ts,95)]
     return np.mean(ts)
 
-def center_ts(res):
+def center_ts(res, num_joints):
     res.shape
 
     scale = (res[:,(NECK*3):(NECK*3+3)] - res[:,(MHIP*3):(MHIP*3+3)])[:,:2]
@@ -262,7 +262,7 @@ def center_ts(res):
     X = mean_perc(res[:,RANK*3])
     Y = mean_perc(res[:,RANK*3+1])
     
-    for i in range(25):
+    for i in range(num_joints):
         res[:,(i*3):(i*3+3)] = res[:,(i*3):(i*3+3)] - np.hstack([X,Y,0])[None,:]
     return res /scale #[:,None]
 
@@ -940,7 +940,7 @@ def process_subject(subjectid, processed_npy_path="videos/np/", framerate = None
     
     #plt.plot(res[:,RANK])
 
-    res = center_ts(res)
+    res = center_ts(res, 25)
     ups, downs = get_segments(res, magnitude=magnitude, framerate = framerate)
     
     if subjectid in realign:
@@ -1017,7 +1017,7 @@ def process_subject(subjectid, processed_npy_path="videos/np/", framerate = None
 
     return results
 
-def process_subject_poseformer(subjectid, processed_npy_path, framerate):
+def process_subject_poseformer(subjectid, res, framerate):
     # total of 17 keypoints
     MHIP = 0 # middle of hip
     RHIP = 1 # right hip
@@ -1036,9 +1036,6 @@ def process_subject_poseformer(subjectid, processed_npy_path, framerate):
     RSHO = 14 # right shoulder
     RELB = 15 # right elbow
     RWRI = 16 # right wrist
-
-    res = np.load("{}/keypoints.npz".format(processed_npy_path))['reconstruction']
-    res = np.reshape(res, (res.shape[1], res.shape[2], res.shape[3]))
     
     if subjectid == "pmYdj2Zc":
         res = res[:-10,:]
@@ -1092,7 +1089,7 @@ def process_subject_poseformer(subjectid, processed_npy_path, framerate):
     
     #plt.plot(res[:,RANK])
 
-    res = center_ts(res)
+    res = center_ts(res, 17)
     ups, downs = get_segments(res, magnitude=magnitude, framerate = framerate)
     
     if subjectid in realign:
@@ -1123,7 +1120,7 @@ def process_subject_poseformer(subjectid, processed_npy_path, framerate):
     height = np.quantile(lengths, 0.95)
     print(height)
     
-    for i in range(3*25):
+    for i in range(3*17):
         res[:,i] = smooth_ts(res[:,i], framerate)
         
     # Normalize to r foot

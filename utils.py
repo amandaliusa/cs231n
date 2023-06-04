@@ -22,34 +22,58 @@ toremove = []
 
 FPS = 30.0
 
-NOSE = 0 # nose
-NECK = 1 # neck
-RSHO = 2 # right shoulder
-RELB = 3 # right elbow
-RWRI = 4 # right wrist
-LSHO = 5 # left shoulder
-LELB = 6 # left elbow
-LWRI = 7 # left wrist 
-MHIP = 8 # middle of hip
-RHIP = 9 # right hip 
-RKNE = 10 # right knee
-RANK = 11 # right ankle
-LHIP = 12 # left hip 
-LKNE = 13 # left knee
-LANK = 14 # left ankle 
-REYE = 15 # right eye 
-LEYE = 16 # left eye
-REAR = 17 # right ear
-LEAR = 18 # left ear
-LBTO = 19 # left big toe
-LSTO = 20 # left small toe
-LHEL = 21 # left heel 
-RBTO = 22 # right big toe
-RSTO = 23 # right small toe
-RHEL = 24 # right heel 
-VERT = 25
-LAH = 26 
-RAH = 27 
+# uncomment for OpenPose
+# NOSE = 0 # nose
+# NECK = 1 # neck
+# RSHO = 2 # right shoulder
+# RELB = 3 # right elbow
+# RWRI = 4 # right wrist
+# LSHO = 5 # left shoulder
+# LELB = 6 # left elbow
+# LWRI = 7 # left wrist 
+# MHIP = 8 # middle of hip
+# RHIP = 9 # right hip 
+# RKNE = 10 # right knee
+# RANK = 11 # right ankle
+# LHIP = 12 # left hip 
+# LKNE = 13 # left knee
+# LANK = 14 # left ankle 
+# REYE = 15 # right eye 
+# LEYE = 16 # left eye
+# REAR = 17 # right ear
+# LEAR = 18 # left ear
+# LBTO = 19 # left big toe
+# LSTO = 20 # left small toe
+# LHEL = 21 # left heel 
+# RBTO = 22 # right big toe
+# RSTO = 23 # right small toe
+# RHEL = 24 # right heel 
+# VERT = 25
+# LAH = 26 
+# RAH = 27 
+
+# uncomment for PoseFormer
+MHIP = 0 # middle of hip
+RHIP = 1 # right hip
+RKNE = 2 # right knee
+RANK = 3 # right ankle
+LHIP = 4 # left hip
+LKNE = 5 # left knee
+LANK = 6 # left ankle
+MTOR = 7 # middle of torso
+NECK = 8 # neck
+NOSE = 9 # nose
+HEAD = 10 # forehead
+LSHO = 11 # left shoulder
+LELB = 12 # left elbow
+LWRI = 13 # left wrist
+RSHO = 14 # right shoulder
+RELB = 15 # right elbow
+RWRI = 16 # right wrist
+# computed separately
+VERT = 17
+LAH = 18
+RAH = 19 
 
 def get_framerate(filepath, videoid):
     try:
@@ -287,7 +311,7 @@ def plot_ts(res):
         plt.plot(res[:,[col*3+1,]], linestyle="-", linewidth=2.5)
         plt.legend(['x', 'y'],loc=1)
 
-def get_angle_stats(A, B, C, res, breaks, framerate = 30, name = None, alternate = 0, breaks_alt=None):
+def get_angle_stats(A, B, C, res, breaks, framerate = 30, name = None, alternate = 0, breaks_alt=None, show_plots=True):
     is3d = len(res.shape) == 3
     
     if is3d:
@@ -325,7 +349,8 @@ def get_angle_stats(A, B, C, res, breaks, framerate = 30, name = None, alternate
                 plt.axvspan(breaks[i-1]/framerate, breaks[i]/framerate, alpha=0.1, color='green')
         if SAVE_FIGS:
             plt.savefig("plots/hip-angle.pdf", bbox_inches='tight')
-        plt.show()
+        if show_plots:
+            plt.show()
         
         # Single hip angle
         plt.title("Trunk lean" + (" (3D)" if is3d else ""),fontsize=24)
@@ -341,7 +366,8 @@ def get_angle_stats(A, B, C, res, breaks, framerate = 30, name = None, alternate
         plt.axvline(x=(breaks[1] - breaks[1])/framerate, linewidth=2, color='r', linestyle="--")
         if SAVE_FIGS:
             plt.savefig("plots/single-hip-angle.pdf", bbox_inches='tight')
-        plt.show()
+        if show_plots:
+            plt.show()
         
     for i in range(len(breaks)-1):
         if (alternate==1) and i % 2 == 1:
@@ -410,7 +436,7 @@ def get_angle_stats(A, B, C, res, breaks, framerate = 30, name = None, alternate
 #        "{}_ts{}".format(name,sts): langle,
     }
     
-def get_angles_results(res, breaks, framerate = 30, alternate = 0, breaks_alt = None):
+def get_angles_results(res, breaks, framerate = 30, alternate = 0, breaks_alt = None, num_joints = 25, show_plots = True):
     is3d = len(res.shape)==3
     
     res = res.copy()
@@ -443,17 +469,20 @@ def get_angles_results(res, breaks, framerate = 30, alternate = 0, breaks_alt = 
         res = np.hstack([res.copy(), vert, lah, rah])
     
     results = {}
-    results.update(get_angle_stats(LANK, LKNE, LHIP, res, breaks, name="left_knee", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(RANK, RKNE, RHIP, res, breaks, name="right_knee", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(NECK, LHIP, LKNE, res, breaks, name="left_hip", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(NECK, RHIP, RKNE, res, breaks, name="right_hip", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(LBTO, LANK, LKNE, res, breaks, name="left_ankle", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(RBTO, RANK, RKNE, res, breaks, name="right_ankle", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(VERT, MHIP, NECK, res, breaks, name="trunk_lean", framerate = framerate, alternate = alternate, breaks_alt = breaks_alt))
-    results.update(get_angle_stats(LKNE, LANK, LAH, res, breaks, name="left_shank_angle", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(RKNE, RANK, RAH, res, breaks, name="right_shank_angle", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(NECK, RKNE, RANK, res, breaks, name="alignment", framerate = framerate, alternate = alternate))
-    results.update(get_angle_stats(NECK, MHIP, 25, res, breaks, name="trunk"))
+    results.update(get_angle_stats(LANK, LKNE, LHIP, res, breaks, name="left_knee", framerate = framerate, alternate = alternate, show_plots = show_plots))
+    results.update(get_angle_stats(RANK, RKNE, RHIP, res, breaks, name="right_knee", framerate = framerate, alternate = alternate, show_plots = show_plots))
+    results.update(get_angle_stats(NECK, LHIP, LKNE, res, breaks, name="left_hip", framerate = framerate, alternate = alternate, show_plots = show_plots))
+    results.update(get_angle_stats(NECK, RHIP, RKNE, res, breaks, name="right_hip", framerate = framerate, alternate = alternate, show_plots = show_plots))
+    
+    # uncomment for OpenPose
+    # results.update(get_angle_stats(LBTO, LANK, LKNE, res, breaks, name="left_ankle", framerate = framerate, alternate = alternate))
+    # results.update(get_angle_stats(RBTO, RANK, RKNE, res, breaks, name="right_ankle", framerate = framerate, alternate = alternate))
+    
+    results.update(get_angle_stats(VERT, MHIP, NECK, res, breaks, name="trunk_lean", framerate = framerate, alternate = alternate, breaks_alt = breaks_alt, show_plots = show_plots))
+    results.update(get_angle_stats(LKNE, LANK, LAH, res, breaks, name="left_shank_angle", framerate = framerate, alternate = alternate, show_plots = show_plots))
+    results.update(get_angle_stats(RKNE, RANK, RAH, res, breaks, name="right_shank_angle", framerate = framerate, alternate = alternate, show_plots = show_plots))
+    results.update(get_angle_stats(NECK, RKNE, RANK, res, breaks, name="alignment", framerate = framerate, alternate = alternate, show_plots = show_plots))
+    results.update(get_angle_stats(NECK, MHIP, num_joints, res, breaks, name="trunk", show_plots = show_plots))
     
     return results
 
@@ -555,7 +584,7 @@ def get_static(res, down, up):
         "rknee_angle_first_stand"+is3d_str: rkeee_angle[up[0]],
     }
 
-def get_speed_stats(joint, res, breaks, framerate=30, name="pelvic", alternate=False):
+def get_speed_stats(joint, res, breaks, framerate=30, name="pelvic", alternate=False, show_plots=True):
     is3d = len(res.shape) == 3
     if is3d:
         trunk_speed = get_joint_speed3d(joint, res)[:,0:3] * framerate
@@ -582,7 +611,8 @@ def get_speed_stats(joint, res, breaks, framerate=30, name="pelvic", alternate=F
                 plt.axvspan(breaks[i-1]/framerate, breaks[i]/framerate, alpha=0.1, color='green')
         if SAVE_FIGS:
             plt.savefig("plots/pelvic.pdf", bbox_inches='tight')
-        plt.show()
+        if show_plots:
+            plt.show()
     
     
     n = trunk_speed.shape[0]
@@ -628,10 +658,10 @@ def get_speed_stats(joint, res, breaks, framerate=30, name="pelvic", alternate=F
         "{}_max_y_acc{}".format(name,sts): np.quantile(trunk_acc[:,1], 0.95),
     }
     
-def get_acceleration_results(res, breaks, framerate=30, alternate=0):
+def get_acceleration_results(res, breaks, framerate=30, alternate=0, show_plots=True):
     results = {}
-    results.update(get_speed_stats(MHIP, res, breaks, name="pelvic", framerate = framerate, alternate=alternate))
-    results.update(get_speed_stats(NECK, res, breaks, name="neck", framerate = framerate, alternate=alternate))
+    results.update(get_speed_stats(MHIP, res, breaks, name="pelvic", framerate = framerate, alternate=alternate, show_plots = show_plots))
+    results.update(get_speed_stats(NECK, res, breaks, name="neck", framerate = framerate, alternate=alternate, show_plots = show_plots))
     return results
 
 def get_angle(A,B,C,data):
@@ -679,7 +709,7 @@ def get_angle3d(A,B,C,data):
     M[M < 0] = 2*np.pi + M[M < 0]
     return M
 
-def get_segments(res, magnitude = 1, magnitude_loc = 1, framerate = 30):
+def get_segments(res, magnitude = 1, magnitude_loc = 1, framerate = 30, show_plots=True):
     nose_y = res[:,[NOSE*3+1,]]
     neck_y = res[:,[NECK*3+1,]]
     ind_y = (neck_y + nose_y)/2
@@ -779,7 +809,8 @@ def get_segments(res, magnitude = 1, magnitude_loc = 1, framerate = 30):
     
     if SAVE_FIGS:
         plt.savefig("plots/nose.pdf", bbox_inches='tight')
-    plt.show()
+    if show_plots:
+        plt.show()
     
     return ups, downs
 
@@ -794,12 +825,15 @@ toswap = [
     [RWRI, LWRI],
     [RHIP, LHIP],
     [RKNE, LKNE],
-    [RANK, LANK],
-    [REYE, LEYE],
-    [REAR, LEAR],
-    [RHEL, LHEL],
-    [RSTO, LSTO],
-    [RBTO, LBTO],    
+    # uncomment for PoseFormer
+    [RANK, LANK]
+    # uncomment for OpenPose
+    # [RANK, LANK],
+    # [REYE, LEYE],
+    # [REAR, LEAR],
+    # [RHEL, LHEL],
+    # [RSTO, LSTO],
+    # [RBTO, LBTO],    
 ]
 
 realign = {
@@ -1017,25 +1051,7 @@ def process_subject(subjectid, processed_npy_path="videos/np/", framerate = None
 
     return results
 
-def process_subject_poseformer(subjectid, res, framerate):
-    # total of 17 keypoints
-    MHIP = 0 # middle of hip
-    RHIP = 1 # right hip
-    RKNE = 2 # right knee
-    RANK = 3 # right ankle
-    LHIP = 4 # left hip
-    LKNE = 5 # left knee
-    LANK = 6 # left ankle
-    MTOR = 7 # middle of torso
-    NECK = 8 # neck
-    NOSE = 9 # nose
-    HEAD = 10 # forehead
-    LSHO = 11 # left shoulder
-    LELB = 12 # left elbow
-    LWRI = 13 # left wrist
-    RSHO = 14 # right shoulder
-    RELB = 15 # right elbow
-    RWRI = 16 # right wrist
+def process_subject_poseformer(subjectid, res, framerate, show_plots=False):
     
     if subjectid == "pmYdj2Zc":
         res = res[:-10,:]
@@ -1090,7 +1106,7 @@ def process_subject_poseformer(subjectid, res, framerate):
     #plt.plot(res[:,RANK])
 
     res = center_ts(res, 17)
-    ups, downs = get_segments(res, magnitude=magnitude, framerate = framerate)
+    ups, downs = get_segments(res, magnitude=magnitude, framerate = framerate, show_plots = show_plots)
     
     if subjectid in realign:
         print(downs)
@@ -1132,13 +1148,13 @@ def process_subject_poseformer(subjectid, res, framerate):
     results.update(get_time_results(res, allbreaks, framerate = framerate, alternate=1))
     results.update(get_time_results(res, allbreaks, framerate = framerate, alternate=-1))
 
-    results.update(get_angles_results(res, downs, framerate = framerate, breaks_alt = ups))
-    results.update(get_angles_results(res, allbreaks, framerate = framerate, alternate=1))
-    results.update(get_angles_results(res, allbreaks, framerate = framerate, alternate=-1))
+    results.update(get_angles_results(res, downs, framerate = framerate, breaks_alt = ups, num_joints=17, show_plots = show_plots))
+    results.update(get_angles_results(res, allbreaks, framerate = framerate, alternate=1, num_joints=17, show_plots = show_plots))
+    results.update(get_angles_results(res, allbreaks, framerate = framerate, alternate=-1, num_joints=17, show_plots = show_plots))
 
-    results.update(get_acceleration_results(res, downs, framerate = framerate))
-    results.update(get_acceleration_results(res, allbreaks, framerate = framerate, alternate=1))
-    results.update(get_acceleration_results(res, allbreaks, framerate = framerate, alternate=-1))
+    results.update(get_acceleration_results(res, downs, framerate = framerate, show_plots = show_plots))
+    results.update(get_acceleration_results(res, allbreaks, framerate = framerate, alternate=1, show_plots = show_plots))
+    results.update(get_acceleration_results(res, allbreaks, framerate = framerate, alternate=-1, show_plots = show_plots))
 
 #    kp3d = get_keypoints3d("npz/{}_ts_results.npz".format(videometa[subjectid]["videoid"]), framerate=framerate)
     kp3d = None
@@ -1146,16 +1162,16 @@ def process_subject_poseformer(subjectid, res, framerate):
     
     if kp3d is not None:
         try:
-            results.update(get_angles_results(kp3d, downs, framerate = framerate))
-            results.update(get_angles_results(kp3d, allbreaks, framerate = framerate, alternate=1))
-            results.update(get_angles_results(kp3d, allbreaks, framerate = framerate, alternate=-1))
+            results.update(get_angles_results(kp3d, downs, framerate = framerate, show_plots = show_plots))
+            results.update(get_angles_results(kp3d, allbreaks, framerate = framerate, alternate=1, show_plots = show_plots))
+            results.update(get_angles_results(kp3d, allbreaks, framerate = framerate, alternate=-1, show_plots = show_plots))
         except:
             print("E")
 
         try:
-            results.update(get_acceleration_results(kp3d, downs, framerate = framerate))
-            results.update(get_acceleration_results(kp3d, allbreaks, framerate = framerate, alternate=1))
-            results.update(get_acceleration_results(kp3d, allbreaks, framerate = framerate, alternate=-1))
+            results.update(get_acceleration_results(kp3d, downs, framerate = framerate, show_plots = show_plots))
+            results.update(get_acceleration_results(kp3d, allbreaks, framerate = framerate, alternate=1, show_plots = show_plots))
+            results.update(get_acceleration_results(kp3d, allbreaks, framerate = framerate, alternate=-1, show_plots = show_plots))
         except:
             print("E")
 

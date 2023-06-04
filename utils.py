@@ -48,8 +48,8 @@ RBTO = 22 # right big toe
 RSTO = 23 # right small toe
 RHEL = 24 # right heel 
 VERT = 25
-LAH = 26 # Left ankle horizontal
-RAH = 27 # Left ankle horizontal
+LAH = 26 
+RAH = 27 
 
 def get_framerate(filepath, videoid):
     try:
@@ -883,8 +883,7 @@ def run_openpose(path, slug):
     return CMD
 
 def process_subject(subjectid, processed_npy_path="videos/np/", framerate = None):
-    #res = np.load("{}{}.npy".format(processed_npy_path, subjectid))
-    res = np.load("{}/keypoints.npz".format(processed_npy_path))
+    res = np.load("{}{}.npy".format(processed_npy_path, subjectid))
     
     if subjectid == "pmYdj2Zc":
         res = res[:-10,:]
@@ -1018,7 +1017,7 @@ def process_subject(subjectid, processed_npy_path="videos/np/", framerate = None
 
     return results
 
-def process_subject_poseformer(subjectid, processed_npy_path, framerate = None):
+def process_subject_poseformer(subjectid, processed_npy_path, framerate):
     # total of 17 keypoints
     MHIP = 0 # middle of hip
     RHIP = 1 # right hip
@@ -1038,8 +1037,8 @@ def process_subject_poseformer(subjectid, processed_npy_path, framerate = None):
     RELB = 15 # right elbow
     RWRI = 16 # right wrist
 
-    #res = np.load("{}{}.npy".format(processed_npy_path, subjectid))
-    res = np.load("{}/keypoints.npz".format(processed_npy_path))
+    res = np.load("{}/keypoints.npz".format(processed_npy_path))['reconstruction']
+    res = np.reshape(res, (res.shape[1], res.shape[2], res.shape[3]))
     
     if subjectid == "pmYdj2Zc":
         res = res[:-10,:]
@@ -1085,9 +1084,6 @@ def process_subject_poseformer(subjectid, processed_npy_path, framerate = None):
     if subjectid in tofix:
         first = tofix[subjectid][0]
         last = tofix[subjectid][1]
-        
-    if not framerate:
-        framerate = videometa[subjectid]["framerate"]
 
     res = res[first:last,:]
 

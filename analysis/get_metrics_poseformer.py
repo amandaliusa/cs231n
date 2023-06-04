@@ -40,7 +40,8 @@ def get_metrics(output_path, show_plots):
                 reshaped_res[:,mask_y] = res[:,:,1]
 
                 results = process_subject_poseformer(subjectid, reshaped_res, framerate=30, show_plots=show_plots)
-                all_res.append(results) 
+                if results != None:
+                    all_res.append(results) 
         except Exception as e:
             traceback.print_exc()
             skipped.append(subjectid)
@@ -48,6 +49,7 @@ def get_metrics(output_path, show_plots):
             continue
         
     print(skipped)
+    print("skipped " + str(len(skipped)))
 
     # save results
     res_df = pd.DataFrame(all_res)

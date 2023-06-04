@@ -333,7 +333,7 @@ def get_angle_stats(A, B, C, res, breaks, framerate = 30, name = None, alternate
 
     # langle = smooth_ts(langle)
 
-    if name == "trunk_lean" and (alternate == 1) and MORE_PLOTS:
+    if name == "trunk_lean" and (alternate == 1) and MORE_PLOTS and show_plots:
         plt.title("Right knee angle",fontsize=24)
         plt.xlabel("time [s]",fontsize=17)
         plt.ylabel("angle",fontsize=17)
@@ -349,8 +349,8 @@ def get_angle_stats(A, B, C, res, breaks, framerate = 30, name = None, alternate
                 plt.axvspan(breaks[i-1]/framerate, breaks[i]/framerate, alpha=0.1, color='green')
         if SAVE_FIGS:
             plt.savefig("plots/hip-angle.pdf", bbox_inches='tight')
-        if show_plots:
-            plt.show()
+        
+        plt.show()
         
         # Single hip angle
         plt.title("Trunk lean" + (" (3D)" if is3d else ""),fontsize=24)
@@ -366,8 +366,8 @@ def get_angle_stats(A, B, C, res, breaks, framerate = 30, name = None, alternate
         plt.axvline(x=(breaks[1] - breaks[1])/framerate, linewidth=2, color='r', linestyle="--")
         if SAVE_FIGS:
             plt.savefig("plots/single-hip-angle.pdf", bbox_inches='tight')
-        if show_plots:
-            plt.show()
+        
+        plt.show()
         
     for i in range(len(breaks)-1):
         if (alternate==1) and i % 2 == 1:
@@ -594,7 +594,7 @@ def get_speed_stats(joint, res, breaks, framerate=30, name="pelvic", alternate=F
 
     trunk_speed_mag = np.sqrt(np.sum(trunk_speed**2, axis=1))
     
-    if joint == MHIP and alternate and MORE_PLOTS:
+    if joint == MHIP and alternate and MORE_PLOTS and show_plots:
         plt.title("Pelvic vertical velocity",fontsize=24)
         plt.xlabel("time (s)",fontsize=17)
         plt.ylabel("position",fontsize=17)
@@ -611,8 +611,8 @@ def get_speed_stats(joint, res, breaks, framerate=30, name="pelvic", alternate=F
                 plt.axvspan(breaks[i-1]/framerate, breaks[i]/framerate, alpha=0.1, color='green')
         if SAVE_FIGS:
             plt.savefig("plots/pelvic.pdf", bbox_inches='tight')
-        if show_plots:
-            plt.show()
+        
+        plt.show()
     
     
     n = trunk_speed.shape[0]
@@ -726,9 +726,10 @@ def get_segments(res, magnitude = 1, magnitude_loc = 1, framerate = 30, show_plo
     vmax_knee = np.quantile(knee_angle, 0.97) #ind_y.max()
     vmin_knee = np.quantile(knee_angle, 0.03) #ind_y.min()
     
-    plt.title("Peaks of the nose",fontsize=24)
-    plt.xlabel("time [s]",fontsize=17)
-    plt.ylabel("position",fontsize=17)
+    if show_plots:
+        plt.title("Peaks of the nose",fontsize=24)
+        plt.xlabel("time [s]",fontsize=17)
+        plt.ylabel("position",fontsize=17)
 
     grid = [x for x in range(ind_y.shape[0])]
 
@@ -795,21 +796,22 @@ def get_segments(res, magnitude = 1, magnitude_loc = 1, framerate = 30, show_plo
     print(ups)
         
     scale = framerate
-    
-    plt.plot(np.array(grid)/scale, knee_angle, linestyle="-", linewidth=2.5)
-    plt.plot(np.array(grid)/scale, ind_y, linestyle="-", linewidth=2.5)
-    plt.plot(np.array(grid)/scale, ind_y_smooth, linestyle="-", linewidth=2.5)
 
-    for i in range(ups.shape[0]):
-        plt.axvline(x=ups[i]/scale,linewidth=2, color='g', linestyle="--")
-    
-    for i in range(downs.shape[0]):
-        plt.axvline(x=downs[i]/scale,linewidth=2, color='r', linestyle="--")
-        
-    
-    if SAVE_FIGS:
-        plt.savefig("plots/nose.pdf", bbox_inches='tight')
     if show_plots:
+    
+        plt.plot(np.array(grid)/scale, knee_angle, linestyle="-", linewidth=2.5)
+        plt.plot(np.array(grid)/scale, ind_y, linestyle="-", linewidth=2.5)
+        plt.plot(np.array(grid)/scale, ind_y_smooth, linestyle="-", linewidth=2.5)
+
+        for i in range(ups.shape[0]):
+            plt.axvline(x=ups[i]/scale,linewidth=2, color='g', linestyle="--")
+        
+        for i in range(downs.shape[0]):
+            plt.axvline(x=downs[i]/scale,linewidth=2, color='r', linestyle="--")
+            
+        
+        if SAVE_FIGS:
+            plt.savefig("plots/nose.pdf", bbox_inches='tight')
         plt.show()
     
     return ups, downs

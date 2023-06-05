@@ -29,7 +29,7 @@ def compare_scores_y(scores, y, num_correct, num_samples, num_positives):
     num_positives += (preds == 1).sum()    
     return num_correct, num_samples, num_positives
 
-def train_model(model, optimizer, loader_t, loader_v, epochs=1):
+def train_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=False, num_samples_pos=1, num_samples_neg=1):
     model = model.to(device=device) 
     
     loss_epoch = []
@@ -38,7 +38,11 @@ def train_model(model, optimizer, loader_t, loader_v, epochs=1):
     train_pos_epoch = []
     val_pos_epoch = []
     
-    BCEwithLogitLoss = nn.BCEWithLogitsLoss()
+    if use_BCE_weight:
+        weight = torch.as_tensor(num_samples_neg / num_samples_pos, dtype=torch.float)
+        BCEwithLogitLoss = nn.BCEWithLogitsLoss(pos_weight=weight)
+    else:
+        BCEwithLogitLoss = nn.BCEWithLogitsLoss()
     
     for e in range(epochs):
         num_correct = 0

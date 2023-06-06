@@ -24,11 +24,22 @@ def get_metrics(output_path, show_plots, get_3d):
     skipped = []
     all_res = []
 
+    to_skip = ['kunkun', 'woyjGsIt', 'ZAn8qhAb', 'mxKQbPdW', 'GITsdVy7', 'OuYG4U64', 'k3YTjMU4', 'yzutrWiF', 'l230IPIW', 
+           'x77WJ10Q', 'XVvERXzh', 'oSFbRH4g', 'LGqwZPty', 'IMG_1623', 'JNh9mTC7', 'tFbOCnVv', '20230505_131419', 
+           'ztKJoXiw', 'VID_20230505_201438080', 'gZry6Nal', 'trim.EB638E4E_B3DC_470E_883A_26253AC03B55', 'IMG_0067', 
+           'VKW2KzGC', 'hsX5kAeZ', 'trim.BBF38598_A21A_4AFB_8BD6_EE7D6564DAED', 'F2FtnWVJ', 'nGyTDr5q', 'HAKCEJWo', 
+           'Cw8bz9tw', 'uwtiYEpw', 'IMG_0822', 'j3iTbhie', 'IMG_8762', 'X5kmXm2t', 'JOmsdP6A', 'g1eKN8fK', 'UmopdCFg', 
+           'zkO4XPXQ', 'IMG_5384', 'Wyg30nvk', 'iJsDlll8', 'IMG_6494', '2SV6hYB2', '0B2dfO4b', 'ku64Cwle', 'IMG_3013', 
+           'video', 'yt2AP5Lo', 'iVGPuONf', 'KneeVideo_Seese_May8', 'eOBg4mwH', 'trim.495B207A_D816_405F_91CE_21FF0E67F907', 
+           'IMG_1070', 'RJVU9j8P', '4RF13po6', 'MeABXs62', 'IMG_1202', 'BvPM57u7', '15IPa5iS', 'obDMup1i', 'g5sxqMgO', 
+           'VID_20230507_175427', 'ESzlIzyO', 'IMG_0388', 'VEBURFuk', 'CWf3eyvo', 'QNEd2eGX', 'ZR3QAZmu', '0nUjlcd7', 
+           'H1SDVD0X', 'IMG_4697', 'F6PuVthQ', 'qpxWRSOP', 'iqQ28Zc4', 'xWZi5URn', 'PA4bXBlr']
+
     # Convert frames to a numpy array
     for subjectid in subjects:
         print(subjectid)
         try:
-            if (subjectid != "kunkun" and os.path.isdir("../pretrained_models/poseformer/{}".format(subjectid))):
+            if (subjectid not in to_skip and os.path.isdir("../pretrained_models/poseformer/{}".format(subjectid))):
                 processed_npz_path_2d="{}/pretrained_models/poseformer/{}/input_2D/".format(homedir, subjectid)
                 res2d = np.load("{}/keypoints.npz".format(processed_npz_path_2d))['reconstruction']
                 res2d = np.reshape(res2d, (res2d.shape[1], res2d.shape[2], res2d.shape[3]))

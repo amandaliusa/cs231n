@@ -29,7 +29,7 @@ def compare_scores_y(scores, y, num_correct, num_samples, num_positives):
     num_positives += (preds == 1).sum()    
     return num_correct, num_samples, num_positives
 
-def train_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=False, num_samples_pos=1, num_samples_neg=1):
+def train_and_get_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=False, num_samples_pos=1, num_samples_neg=1):
     model = model.to(device=device) 
     
     loss_epoch = []
@@ -37,6 +37,9 @@ def train_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=F
     val_acc_epoch = []
     train_pos_epoch = []
     val_pos_epoch = []
+
+    best_val = 0 
+    best_model = None
     
     if use_BCE_weight:
         weight = torch.as_tensor(num_samples_neg / num_samples_pos, dtype=torch.float)
@@ -74,8 +77,17 @@ def train_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=F
         val_acc_epoch.append(val_acc * 100)
         val_pos_epoch.append(val_percent_pos * 100)
 
+        if val_acc > best_val: 
+            best_val = val_acc 
+            best_model = model 
+
         print('Epoch %d, loss = %.4f, train_acc = %.4f, val_acc = %.4f, train_pos = %.4f, val_pos = %.4f' % \
           (e, loss_epoch[-1], train_acc_epoch[-1], val_acc_epoch[-1], train_pos_epoch[-1], val_pos_epoch[-1]))
+
+    return loss_epoch, train_acc_epoch, val_acc_epoch, train_pos_epoch, val_pos_epoch, best_val, best_model
+
+def train_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=False, num_samples_pos=1, num_samples_neg=1):
+    loss_epoch, train_acc_epoch, val_acc_epoch, train_pos_epoch, val_pos_epoch, best_val, best_model = train_and_get_model(model, optimizer, loader_t, loader_v, epochs, use_BCE_weight, num_samples_pos, num_samples_neg)
 
     return loss_epoch, train_acc_epoch, val_acc_epoch, train_pos_epoch, val_pos_epoch
 

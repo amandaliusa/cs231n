@@ -1,3 +1,4 @@
+import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -79,7 +80,7 @@ def train_and_get_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_
 
         if val_acc > best_val: 
             best_val = val_acc 
-            best_model = model 
+            best_model = copy.deepcopy(model)
 
         print('Epoch %d, loss = %.4f, train_acc = %.4f, val_acc = %.4f, train_pos = %.4f, val_pos = %.4f' % \
           (e, loss_epoch[-1], train_acc_epoch[-1], val_acc_epoch[-1], train_pos_epoch[-1], val_pos_epoch[-1]))

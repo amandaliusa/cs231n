@@ -1,0 +1,9 @@
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_orig --epoch 50
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_lr00001 --lr 0.00001 --epoch 50
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer --model_type threeLayer --lr 0.00001 --epoch 50
+
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_l2 --weight_decay 1e-4 --epoch 50
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_h500 --lr 0.00001 --hidden_size1 500 --epoch 50
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_h10k --lr 0.00001 --hidden_size1 10000 --epoch 50
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer_20k_2k --model_type threeLayer --lr 0.00001 --hidden_size1 20000 --hidden_size2 2000 --epoch 50
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer_20k_20k --model_type threeLayer --lr 0.00001 --hidden_size1 20000 --hidden_size2 20000 --epoch 50

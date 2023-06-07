@@ -13,3 +13,4 @@ videos/*
 all_keypoints.npy
 .DS_Store
 *.pth
+models/

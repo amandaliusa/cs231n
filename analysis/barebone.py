@@ -78,7 +78,7 @@ def train_and_get_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_
         val_acc_epoch.append(val_acc * 100)
         val_pos_epoch.append(val_percent_pos * 100)
 
-        if val_acc > best_val: 
+        if val_acc >= best_val: 
             best_val = val_acc 
             best_model = copy.deepcopy(model)
 

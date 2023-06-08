@@ -39,6 +39,10 @@ def parse_args():
     parser.add_argument('--model_type', type=str, default='barebone')
     parser.add_argument('--hidden_size1', type=int, default=2000)
     parser.add_argument('--hidden_size2', type=int, default=1000)
+    parser.add_argument('--rnn_hidden_size', type=int, default=2000)
+    parser.add_argument('--lstm_hidden_size', type=int, default=2000)
+    parser.add_argument('--lstm_dropout', type=float, default=0)
+    parser.add_argument('--batch_size', type=int, default=64)
     args = parser.parse_args()
     return args
 
@@ -55,12 +59,12 @@ num_samples = joint_3d_out_o.shape[0]
 joint_3d_out = joint_3d_out_o.reshape((num_samples, -1))      # Flatten frame, joint and coordinates
 joint_3d_out_pd = pd.DataFrame(joint_3d_out)
 joint_3d_out_pd.insert(0, 'subjectid', video_list_3d)
+N, num_frames, num_joints, num_dim = joint_3d_out_o.shape
 
 # print(joint_3d_out_pd.shape)
 joint_3d_out_pd
 
 # Load survey data
-
 df_survey = pd.read_csv(r'https://raw.githubusercontent.com/amandaliusa/cs231n/main/data/survey_data.csv')
 df_survey
 
@@ -168,30 +172,63 @@ loader_train_os = DataLoader(train, batch_size=64, sampler=weighted_sampler)
 # Train
 print(args.output_path)
 
+# Dataset for non-RNN
 train = CustomDataset(dataframe=train_data, transform=transform if args.normalize else None)
-loader_train = DataLoader(train, batch_size=64, 
+loader_train = DataLoader(train, batch_size=args.batch_size, 
                        sampler=sampler.SubsetRandomSampler(range(NUM_TRAIN)))
 
 val = CustomDataset(dataframe=val_data, transform=transform if args.normalize else None)
-loader_val = DataLoader(val, batch_size=64, 
+loader_val = DataLoader(val, batch_size=args.batch_size, 
                         sampler=sampler.SubsetRandomSampler(range(NUM_VAL)))
 
 test = CustomDataset(dataframe=test_data, transform=transform if args.normalize else None)
-loader_test = DataLoader(test, batch_size=64)
+loader_test = DataLoader(test, batch_size=args.batch_size)
+
+# truncated dataset for RNN and LSTM
+rnn_num_frames = 250
+trunc_point = rnn_num_frames * num_joints * num_dim
+train_trunc_tmp = train_data.drop(columns=range(trunc_point, train_data.shape[1] - 1, 1))
+val_trunc_tmp = val_data.drop(columns=range(trunc_point, train_data.shape[1] - 1, 1))
+test_trunc_tmp = test_data.drop(columns=range(trunc_point, train_data.shape[1] - 1, 1))
+
+train_trunc = CustomDataset(dataframe=train_trunc_tmp, transform=transform if args.normalize else None)
+loader_train_trunc = DataLoader(train_trunc, batch_size=args.batch_size, 
+                       sampler=sampler.SubsetRandomSampler(range(NUM_TRAIN)))
+
+val_trunc = CustomDataset(dataframe=val_trunc_tmp, transform=transform if args.normalize else None)
+loader_val_trunc = DataLoader(val_trunc, batch_size=args.batch_size, 
+                        sampler=sampler.SubsetRandomSampler(range(NUM_VAL)))
+
+test_trunc = CustomDataset(dataframe=test_trunc_tmp, transform=transform if args.normalize else None)
+loader_test_trunc = DataLoader(test_trunc, batch_size=args.batch_size)
 
 input_size = 160875
 hidden_size1 = args.hidden_size1
 hidden_size2 = args.hidden_size2
+rnn_hidden_size = args.rnn_hidden_size
+lstm_hidden_size = args.lstm_hidden_size
 num_classes = 1
 num_samples_pos = train_data[train_data['OA_check']==1].shape[0]
 num_samples_neg = train_data[train_data['OA_check']==0].shape[0]
+
 if args.model_type == 'barebone':
     model = Barebones_model(input_size, hidden_size1, num_classes).to(device=device)
 elif args.model_type == 'threeLayer':
     model = ThreeLayer_model(input_size, hidden_size1, hidden_size2, num_classes).to(device=device)
+elif args.model_type == 'rnn':
+    model = RNN_model(num_joints * num_dim, rnn_hidden_size, hidden_size1, num_classes, num_frames=rnn_num_frames)
+elif args.model_type == 'lstm':
+    model = LSTM_model(num_joints * num_dim, lstm_hidden_size, hidden_size1, num_classes, num_frames=rnn_num_frames, dropout=args.lstm_dropout)
+
 optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-loss, train_acc, val_acc, train_pos, val_pos, best_val, best_model = train_and_get_model(model, optimizer, loader_train, loader_val, epochs=args.epoch, \
-    use_BCE_weight=True, num_samples_pos=num_samples_pos, num_samples_neg=num_samples_neg)
+
+if args.model_type == 'rnn' or args.model_type == 'lstm':
+    loss, train_acc, val_acc, train_pos, val_pos, best_val, best_model = train_and_get_model(model, optimizer, loader_train_trunc, loader_val_trunc, epochs=args.epoch, \
+        use_BCE_weight=True, num_samples_pos=num_samples_pos, num_samples_neg=num_samples_neg)
+else:
+    loss, train_acc, val_acc, train_pos, val_pos, best_val, best_model = train_and_get_model(model, optimizer, loader_train, loader_val, epochs=args.epoch, \
+        use_BCE_weight=True, num_samples_pos=num_samples_pos, num_samples_neg=num_samples_neg)
+
 
 pickle.dump(best_model, open(args.output_path, 'wb'))
 
@@ -220,6 +257,7 @@ for ax in axes:
     ax.grid(linestyle='--', linewidth=0.5)
 
 plt.savefig(args.output_path + '_fig.png')
+plt.close()
 
 # saliency map
 
@@ -254,25 +292,32 @@ saliency = compute_saliency_maps(x, y, num_samples_pos, num_samples_neg, best_mo
 
 _, F, J, D = joint_3d_out_o.shape
 N = saliency.shape[0]
-saliency_NF = saliency.view((N, F, J, D)).mean(dim=(2, 3))
+saliency_NF = torch.abs(saliency.view((N, F, J, D)).mean(dim=(2, 3)))
 saliency_NF = nn.functional.normalize(saliency_NF, dim=1).cpu()
-saliency_NJ = saliency.view((N, F, J, D)).mean(dim=(1, 3))
+saliency_NJ = torch.abs(saliency.view((N, F, J, D)).mean(dim=(1, 3)))
 saliency_NJ = nn.functional.normalize(saliency_NJ, dim=1).cpu()
-saliency_ND = saliency.view((N, F, J, D)).mean(dim=(1, 2))
+saliency_ND = torch.abs(saliency.view((N, F, J, D)).mean(dim=(1, 2)))
 saliency_ND = nn.functional.normalize(saliency_ND, dim=1).cpu()
-saliency_FJ = saliency.view((N, F, J, D)).mean(dim=(0, 3))
+saliency_FJ = torch.abs(saliency.view((N, F, J, D)).mean(dim=(0, 3)))
 saliency_FJ = nn.functional.normalize(saliency_FJ, dim=1).cpu()
 
 
 plt.imshow(saliency_NF, aspect='auto')
 plt.colorbar()
-plt.show()
+plt.savefig(args.output_path + '_sal1.png')
+plt.close()
+
 plt.imshow(saliency_NJ, aspect='auto')
 plt.colorbar()
-plt.show()
+plt.savefig(args.output_path + '_sal2.png')
+plt.close()
+
 plt.imshow(saliency_ND, aspect='auto')
 plt.colorbar()
-plt.show()
+plt.savefig(args.output_path + '_sal3.png')
+plt.close()
+
 plt.imshow(saliency_FJ, aspect='auto')
 plt.colorbar()
-plt.savefig(args.output_path + '_sal.png')
+plt.savefig(args.output_path + '_sal4.png')
+plt.close()

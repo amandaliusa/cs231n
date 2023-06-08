@@ -1,9 +1,18 @@
 python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_orig --epoch 50
 python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_lr00001 --lr 0.00001 --epoch 50
 python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer --model_type threeLayer --lr 0.00001 --epoch 50
-
 python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_l2 --weight_decay 1e-4 --epoch 50
 python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_h500 --lr 0.00001 --hidden_size1 500 --epoch 50
-python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_h10k --lr 0.00001 --hidden_size1 10000 --epoch 50
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_rnn --model_type rnn --lr 0.00001 --rnn_hidden_size 2000 --hidden_size1 2000 --epoch 50
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer_wd-4 --model_type threeLayer --lr 0.00001 --weight_decay 1e-4 --epoch 200
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer_wd-3 --model_type threeLayer --lr 0.00001 --weight_decay 1e-3 --epoch 100
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_lstm --model_type lstm --lr 0.00001 --rnn_hidden_size 1000 --hidden_size1 2000 --weight_decay 1e-4 --epoch 50
+
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer_wd-2 --model_type threeLayer --lr 0.00001 --weight_decay 1e-2 --epoch 100
+
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_h500_3layer_wd-2 --model_type threeLayer --lr 0.00001 --weight_decay 1e-2 --hidden_size1 500 --epoch 100
+
+python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_h10k --lr 0.00001 --hidden_size1 10000 --epoch 50 --batch_size 16
 python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer_20k_2k --model_type threeLayer --lr 0.00001 --hidden_size1 20000 --hidden_size2 2000 --epoch 50
 python OSX3D_hyper.py --output_path ../models/OSX_weighted_loss_3layer_20k_20k --model_type threeLayer --lr 0.00001 --hidden_size1 20000 --hidden_size2 20000 --epoch 50
+

@@ -1,5 +1,5 @@
-import copy
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
@@ -22,6 +22,7 @@ class Barebones_model(nn.Module):
     def forward(self, x):
         scores = self.fc2(F.relu(self.fc1(x)))
         return scores
+    
     
 def compare_scores_y(scores, y, num_correct, num_samples, num_positives):
     # Accumulates number of correct predictions, numer of samples and number of samples with prediction = 1
@@ -89,9 +90,9 @@ def train_and_get_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_
         val_acc_epoch.append(val_acc * 100)
         val_pos_epoch.append(val_percent_pos * 100)
 
-        if val_acc >= best_val: 
+        if val_acc > best_val: 
             best_val = val_acc 
-            best_model = copy.deepcopy(model)
+            best_model = model 
 
         print('Epoch %d, loss = %.4f, train_acc = %.4f, val_acc = %.4f, train_pos = %.4f, val_pos = %.4f' % \
           (e, loss_epoch[-1], train_acc_epoch[-1], val_acc_epoch[-1], train_pos_epoch[-1], val_pos_epoch[-1]))
@@ -129,3 +130,30 @@ def check_accuracy(loader, model):
         f1_score_avg = f1_score_total / len(loader)  # Calculate the average F1 score
         
     return acc, percent_pos, f1_score_avg
+
+def predict_class(model, loader):
+    # Ensure the model is in evaluation mode
+    model.eval()
+    # Store in a list
+    predicted_classes = []
+    true_classes = []
+    
+    with torch.no_grad():
+        # Iterate over the batches in 'loader'
+        for x, y in loader:
+            x = x.to(device=device, dtype=dtype)
+            y = y.to(device=device, dtype=dtype)
+            
+            output = model(x).squeeze(1)
+            probs = torch.sigmoid(output)
+            
+            predicted_class = (probs > 0.5).float()
+            
+            predicted_classes.append(predicted_class.cpu().numpy())
+            true_classes.append(y.cpu().numpy())
+             
+    # concatenate into a single numpy array
+    predicted_classes = np.concatenate(predicted_classes)
+    true_classes = np.concatenate(true_classes)
+    
+    return predicted_classes, true_classes

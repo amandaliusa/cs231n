@@ -6,8 +6,11 @@ from torch.utils.data import Dataset, DataLoader, sampler
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 dtype=torch.float32
 
@@ -124,4 +127,22 @@ def plot_roc_curve(model, loader, device):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic example')
     plt.legend(loc="lower right")
+    plt.show()
+
+def plot_confusion_matrix(true_classes, predicted_classes):
+    classes = ['OA=0', 'OA=1']
+    # Create a confusion matrix
+    cm  = confusion_matrix(true_classes, predicted_classes)
+    
+    # Normalize the confusion matrix
+    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    
+    cm_df = pd.DataFrame(cm, index=classes, columns=classes)
+    
+    # Create a heatmap
+    plt.figure(figsize=(8,6))
+    sns.heatmap(cm_df, annot=True, cmap='Blues') 
+    plt.ylabel('True Class')
+    plt.xlabel('Predicted Class')
+    plt.title('Confusion Matrix')
     plt.show()

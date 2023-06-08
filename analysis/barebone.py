@@ -41,7 +41,7 @@ def get_f1_score(scores, y):
     # Calculate F1 score using sklearn function
     return f1_score(y, preds)
 
-def train_and_get_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=False, num_samples_pos=1, num_samples_neg=1):
+def train_and_get_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=False, num_samples_pos=1, num_samples_neg=1, verbose=True):
     model = model.to(device=device) 
     
     loss_epoch = []
@@ -92,17 +92,18 @@ def train_and_get_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_
 
         if val_acc > best_val: 
             best_val = val_acc 
-            best_model = model 
+            best_model = copy.deepcopy(model)
+            
+        if verbose or e % 10 == 0:
+            print('Epoch %d, loss = %.4f, train_acc = %.4f, val_acc = %.4f, train_pos = %.4f, val_pos = %.4f' % \
+              (e, loss_epoch[-1], train_acc_epoch[-1], val_acc_epoch[-1], train_pos_epoch[-1], val_pos_epoch[-1]))
 
-        print('Epoch %d, loss = %.4f, train_acc = %.4f, val_acc = %.4f, train_pos = %.4f, val_pos = %.4f' % \
-          (e, loss_epoch[-1], train_acc_epoch[-1], val_acc_epoch[-1], train_pos_epoch[-1], val_pos_epoch[-1]))
-
-        print(f'Epoch {e}, Average Validation F1 Score: {f1_avg}')
+            print(f'Epoch {e}, Average Validation F1 Score: {f1_avg}')
 
     return loss_epoch, train_acc_epoch, val_acc_epoch, train_pos_epoch, val_pos_epoch, best_val, best_model
 
-def train_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=False, num_samples_pos=1, num_samples_neg=1):
-    loss_epoch, train_acc_epoch, val_acc_epoch, train_pos_epoch, val_pos_epoch, best_val, best_model = train_and_get_model(model, optimizer, loader_t, loader_v, epochs, use_BCE_weight, num_samples_pos, num_samples_neg)
+def train_model(model, optimizer, loader_t, loader_v, epochs=1, use_BCE_weight=False, num_samples_pos=1, num_samples_neg=1, verbose=True):
+    loss_epoch, train_acc_epoch, val_acc_epoch, train_pos_epoch, val_pos_epoch, best_val, best_model = train_and_get_model(model, optimizer, loader_t, loader_v, epochs, use_BCE_weight, num_samples_pos, num_samples_neg, verbose=verbose)
 
     return loss_epoch, train_acc_epoch, val_acc_epoch, train_pos_epoch, val_pos_epoch
 
@@ -122,7 +123,7 @@ def check_accuracy(loader, model):
                 compare_scores_y(scores, y, num_correct, num_samples, num_positives)
             # Compute f1 score for this batch and add it to f1_score_total
             f1_score_total += get_f1_score(scores, y)
-            print(f'Updated f1_score_total: {f1_score_total}')  # Debug print
+            #print(f'Updated f1_score_total: {f1_score_total}')  # Debug print
 
                     
         acc = float(num_correct) / num_samples

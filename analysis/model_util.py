@@ -6,6 +6,8 @@ from torch.utils.data import Dataset, DataLoader, sampler
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
 
 dtype=torch.float32
 
@@ -91,14 +93,35 @@ def visualise_dataloader(dl, id_to_label=None, with_outputs=True):
         plt.legend()
         plt.show()
 
-        num_images_seen = len(idxs_seen)
-
-        print(
-            f'Avg Proportion of {(id_to_label[0] if id_to_label is not None else "Class 0")} per batch: {(np.array(class_0_batch_counts) / 10).mean()}'
-        )
-        print(
-            f'Avg Proportion of {(id_to_label[1] if id_to_label is not None else "Class 1")} per batch: {(np.array(class_1_batch_counts) / 10).mean()}'
-        )
-        print("=============")
-        print(f"Num. unique images seen: {len(set(idxs_seen))}/{total_num_images}")
-    return class_0_batch_counts, class_1_batch_counts, idxs_seen
+def plot_roc_curve(model, loader, device):
+    model = model.to(device)
+    model.eval()
+    
+    y_test = []
+    y_score = []
+    
+    with torch.no_grad():
+        for x, y in loader:
+            x = x.to(device=device, dtype=torch.float)
+            scores = model(x).squeeze(1)
+            
+            y_test.append(y.cpu().numpy())
+            y_score.append(torch.sigmoid(scores).cpu().numpy())
+            
+    y_test = np.concatenate(y_test)
+    y_score = np.concatenate(y_score)
+    
+    fpr, tpr, _ = roc_curve(y_test, y_score)
+    roc_auc = auc(fpr, tpr)
+    
+    plt.figure()
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic example')
+    plt.legend(loc="lower right")
+    plt.show()

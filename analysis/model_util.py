@@ -146,3 +146,19 @@ def plot_confusion_matrix(true_classes, predicted_classes):
     plt.xlabel('Predicted Class')
     plt.title('Confusion Matrix')
     plt.show()
+    
+def evaluate_dataset(data):
+    for row in range(len(data)):
+        x = []
+        row_data = data.iloc[row]
+        y = row_data[-1] 
+        x = row_data[:-1]
+        x.append(x)
+
+        output = model(torch.tensor(x).to(device))
+        probs = torch.sigmoid(output)
+
+        predicted_class = (probs > 0.5).float()
+
+        subjectId = data.index.values[row]
+        print("subjectId: {}, predicted: {}, actual: {}".format(subjectId, int(predicted_class.cpu().numpy()[0]), int(y)))

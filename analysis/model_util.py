@@ -147,7 +147,7 @@ def plot_confusion_matrix(true_classes, predicted_classes):
     plt.title('Confusion Matrix')
     plt.show()
     
-def evaluate_dataset(data):
+def evaluate_dataset(model, data):
     for row in range(len(data)):
         x = []
         row_data = data.iloc[row]

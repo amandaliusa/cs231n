@@ -157,8 +157,9 @@ def evaluate_dataset(model, data):
 
         output = model(torch.tensor(x).to(device))
         probs = torch.sigmoid(output)
+        prob = probs.cpu()[0]
 
         predicted_class = (probs > 0.5).float()
 
         subjectId = data.index.values[row]
-        print("subjectId: {}, predicted: {}, actual: {}".format(subjectId, int(predicted_class.cpu().numpy()[0]), int(y)))
+        print("subjectId: {}, predicted: {}, actual: {}, prob: {}".format(subjectId, int(predicted_class.cpu().numpy()[0]), int(y), prob))
